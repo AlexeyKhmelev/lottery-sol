@@ -8,17 +8,18 @@ contract Lottery {
   mapping (uint => address payable) public participants;
 
   mapping (address => bytes32) public hashes;
-  mapping (address => bool) public numbers;
-  uint256 hashesCount;
-  uint256 numberCount;
-  uint256[] numbersList;
+  mapping (address => bool) public numberRevealed;
+  uint256 public hashesCount;
+
+  uint256 public revealedNumberCount;
+  uint256 private random;
+
+  bool public isRewardClaimed;
 
   event TicketPurchased(address player, bytes32 numberHash);
   event TicketsSoldOut();
   event NumberRevealed(address player, uint256 number);
   event RewardClaimed(address winner);
-
-  bool isRewardClaimed;
 
   constructor(uint256 _ticketsTotal, uint256 _ticketPrice, bytes32 _numberHash) public payable {
     ticketsTotal = _ticketsTotal;
@@ -35,8 +36,9 @@ contract Lottery {
   }
 
   function _buyTicket(bytes32 _numberHash) private {
+    require(_numberHash != bytes32(0), "Invalid hash");
     require(ticketsAvailable > 0, "No tickets available");
-    require(msg.value == ticketPrice, "Invalid message value");
+    require(msg.value == ticketPrice, "Invalid ether value");
 
     participants[ticketsTotal - ticketsAvailable] = msg.sender;
     ticketsAvailable = ticketsAvailable - 1;
@@ -55,26 +57,26 @@ contract Lottery {
 
   function revealNumber(uint256 _number) public {
     require(ticketsAvailable == 0, "Tickets have not been sold out yet");
-    require(!numbers[msg.sender], "Number already revealed");
+    require(!numberRevealed[msg.sender], "Number already revealed");
     require(keccak256(abi.encodePacked(msg.sender, _number)) == hashes[msg.sender], "Invalid number");
 
-    numbers[msg.sender] = true;
-    numberCount = numberCount + 1;
+    numberRevealed[msg.sender] = true;
 
-    numbersList.push(_number);
+    if (revealedNumberCount == 0) {
+      random = _number;
+    } else {
+      random ^= _number;
+    }
+    revealedNumberCount = revealedNumberCount + 1;
+
     emit NumberRevealed(msg.sender, _number);
   }
 
   function winner() public view returns (address payable winnerAddr) {
     require(ticketsAvailable == 0, "Tickets have not been sold out yet");
-    require(numberCount == hashesCount, "Not all numbers have been revealed yet");
+    require(revealedNumberCount == hashesCount, "Not all numbers have been revealed yet");
 
-    uint256 winnerTicket = numbersList[0];
-    for (uint8 i = 1; i < numbersList.length; ++i) {
-      winnerTicket ^= numbersList[i];
-    }
-
-    winnerAddr = participants[winnerTicket % ticketsTotal];
+    winnerAddr = participants[random % ticketsTotal];
   }
 
   function claimReward() public {
