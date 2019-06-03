@@ -8,7 +8,7 @@ contract('Lottery', ([owner]) => {
     let lotteryContract;
 
     before('Create Lottery Contract', async () => {
-      lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, { from: owner, value: ticketPrice });
+      lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, { from: owner });
     });
 
     it('Get Tickets Number', async () => {
