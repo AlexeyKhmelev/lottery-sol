@@ -47,11 +47,8 @@ contract('Lottery', ([owner, buyer, nonParticipant]) => {
     it('Buy Ticket', async () => {
       const availableBefore = await lotteryContract.ticketsAvailable();
       const receipt = await lotteryContract.buyTicket(hashNumber(buyer, buyerNumber), { from: buyer, value: ticketPrice });
-      const actualBuyer = receipt.logs[0].args.buyer;
 
-      truffleAssert.eventEmitted(receipt, 'TicketPurchased', ev =>  ev.buyer === buyer, 'TicketPurchased should be emitted with correct parameters');
-
-      actualBuyer.should.be.equal(buyer);
+      truffleAssert.eventEmitted(receipt, 'TicketPurchased', ev => ev.player === buyer, 'TicketPurchased should be emitted with correct parameters');
 
       const availableAfter = await lotteryContract.ticketsAvailable();
       availableAfter.should.be.a.bignumber.that.equals(availableBefore.sub(new web3.utils.BN(1)));
@@ -65,6 +62,24 @@ contract('Lottery', ([owner, buyer, nonParticipant]) => {
     });
   });
 
+  describe('Reveal Number', () => {
+    let lotteryContract;
+
+    before('Create Lottery Contract', async () => {
+      lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice });
+
+      for (let i = 0; i < ticketsTotal - 1; i += 1) {
+        // eslint-disable-next-line
+        await lotteryContract.buyTicket(hashNumber(buyer, buyerNumber), { from: buyer, value: ticketPrice });
+      }
+    });
+
+    it('Reveal Number', async () => {
+      const receipt = await lotteryContract.revealNumber(ownerNumber, { from: owner });
+      truffleAssert.eventEmitted(receipt, 'NumberRevealed', ev => (ev.player === owner) && (ev.number.eq(new web3.utils.BN(ownerNumber))), 'NumberRevealed should be emitted with correct parameters');
+    });
+  });
+
   describe('Claim reward', () => {
     let lotteryContract;
 
@@ -72,6 +87,7 @@ contract('Lottery', ([owner, buyer, nonParticipant]) => {
       lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice });
 
       for (let i = 0; i < ticketsTotal - 1; i += 1) {
+        // eslint-disable-next-line
         await lotteryContract.buyTicket(hashNumber(buyer, buyerNumber), { from: buyer, value: ticketPrice });
       }
 
@@ -90,7 +106,7 @@ contract('Lottery', ([owner, buyer, nonParticipant]) => {
       const balanceBefore = await web3.eth.getBalance(winner);
 
       const receipt = await lotteryContract.claimReward({ from: winner });
-      truffleAssert.eventEmitted(receipt, 'RewardClaimed', ev =>  ev.winner === winner, 'RewardClaimed should be emitted with correct parameters');
+      truffleAssert.eventEmitted(receipt, 'RewardClaimed', ev => ev.winner === winner, 'RewardClaimed should be emitted with correct parameters');
 
       const gasPrice = new web3.utils.BN(await web3.eth.getGasPrice());
 
@@ -117,6 +133,26 @@ contract('Lottery', ([owner, buyer, nonParticipant]) => {
         truffleAssert.ErrorType.REVERT,
       );
     });
+
+    it('Can not reveal number if ticket have not been sold out', async () => {
+      const lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice });
+      await truffleAssert.reverts(
+        lotteryContract.revealNumber(ownerNumber, { from: owner }),
+        truffleAssert.ErrorType.REVERT,
+      );
+    });
+
+    it('Can not reveal number twice', async () => {
+      const lotteryContract = await Lottery.new(2, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice });
+      await lotteryContract.buyTicket(hashNumber(buyer, buyerNumber), { from: buyer, value: ticketPrice });
+      await lotteryContract.revealNumber(ownerNumber, { from: owner });
+
+      await truffleAssert.reverts(
+        lotteryContract.revealNumber(ownerNumber, { from: owner }),
+        truffleAssert.ErrorType.REVERT,
+      );
+    });
+
 
     it('Can not get winner if not all numbers are revealed', async () => {
       const lotteryContract = await Lottery.new(2, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice });
@@ -169,7 +205,7 @@ contract('Lottery', ([owner, buyer, nonParticipant]) => {
       const winner = await lotteryContract.winner();
 
       const receipt = await lotteryContract.claimReward({ from: winner });
-      truffleAssert.eventEmitted(receipt, 'RewardClaimed', ev =>  ev.winner === owner, 'RewardClaimed should be emitted with correct parameters');
+      truffleAssert.eventEmitted(receipt, 'RewardClaimed', ev => ev.winner === owner, 'RewardClaimed should be emitted with correct parameters');
 
       await truffleAssert.reverts(
         lotteryContract.claimReward({ from: winner }),
