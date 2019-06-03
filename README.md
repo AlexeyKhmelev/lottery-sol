@@ -12,9 +12,9 @@ As players make up numbers independently the result is effectively randomized.
 The winner can't be determined till all players reveals their numbers. So if one player doesn't reveal the number the whole lottery is hung.
 To avoid such situation the reveal timeframe may be implemented. If a player doesn't reveal the number during the timeframe the whole lottery is cancelled and players may claim their money back. But players who faield to reveal a number will be punished with some fee.
 
-### Alternatives
+### Possible alternatives to RNG
 
-Possible alternative is to use a trusted Oracle system, e.g. oraclize.it.
+Another good approach to RNG might be using Oracles, e.g. oraclize.it or similar. I am leaving this approach of scope for this test task, but would just like to outline that this is a viable solution and some people use it.
 
 ## Run Tests
 
