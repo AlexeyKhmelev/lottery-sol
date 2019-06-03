@@ -22,6 +22,9 @@ contract Lottery {
   event RewardClaimed(address winner);
 
   constructor(uint256 _ticketsTotal, uint256 _ticketPrice, bytes32 _numberHash) public payable {
+    require(_ticketsTotal > 1, "Invalid tickets total");
+    require(_ticketPrice > 0, "Invalid tickets price");
+
     ticketsTotal = _ticketsTotal;
     ticketsAvailable = _ticketsTotal;
     ticketPrice = _ticketPrice;

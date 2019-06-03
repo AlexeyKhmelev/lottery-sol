@@ -118,8 +118,24 @@ contract('Lottery', ([owner, buyer, nonParticipant]) => {
   });
 
   describe('Negative tests', () => {
+    it('Cam not create lottery with less then two tickets', async () => {
+      await truffleAssert.reverts(
+        Lottery.new(1, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice }),
+        truffleAssert.ErrorType.REVERT,
+      );
+    });
+
+    it('Cam not create lottery with zero price', async () => {
+      await truffleAssert.reverts(
+        Lottery.new(ticketsTotal, 0, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice }),
+        truffleAssert.ErrorType.REVERT,
+      );
+    });
+
     it('Can not buy ticket if none is available', async () => {
-      const lotteryContract = await Lottery.new(1, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice });
+      const lotteryContract = await Lottery.new(2, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice });
+      await lotteryContract.buyTicket(hashNumber(buyer, buyerNumber), { from: buyer, value: ticketPrice });
+
       await truffleAssert.reverts(
         lotteryContract.buyTicket(hashNumber(buyer, buyerNumber), { from: buyer, value: ticketPrice }),
         truffleAssert.ErrorType.REVERT,
