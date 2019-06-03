@@ -1,0 +1,4 @@
+node_modules/
+
+# Truffle's build directory
+build/

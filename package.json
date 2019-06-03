@@ -1,0 +1,29 @@
+{
+  "name": "lottery-sol",
+  "version": "1.0.0",
+  "description": "Simple On-Chain Lottery",
+  "main": "truffle-config.js",
+  "scripts": {
+    "eslint": "eslint test/",
+    "solium": "solium -d contracts/",
+    "lint": "npm run solium && npm run eslint",
+    "ganache-cli": "ganache-cli --account=\"0x0ddae2b5536913374e1b931fc1077bca970638208bb8848bbd18ec09f4e7918a,100000000000000000000000\"  --account=\"0x893f9fd5175d157171cdc80b08a8ee4ccd6433f00b3b9adff24c0806373b9f2d,100000000000000000000000\"        --account=\"0xc56e511220f4e358c7d3e3071650647367f7291aa33663803d7e869cc71027db,100000000000000000000000\"        --account=\"0xe1b96870385a9ce6312b65f5b92f0201c7bd88af50dedd9a5e64db378887dbb8,100000000000000000000000\"   --account=\"0x18b8dcbe03f51002f45d3f9faf98329c4cf485befca621887082ac90cffc9173,100000000000000000000000\"        --account=\"0x07430bdf752f571850a125018719d1e1cf43116c69c3804177779f43577a43df,100000000000000000000000\"        --account=\"0x521386e16b9d12324b559fb7524046203faa9963ceb04c7ae927f6dbc3a80d19,100000000000000000000000\"        --account=\"0x005277aeef4e57e4ff6f7b11a8f35d36b906ba461de1316f78745cec63b9bd54,100000000000000000000000\"    --account=\"0x0dbbe8e4ae425a6d2687f1a7e3ba17bc98c673636790f1b8ad91193c05875ef1,100000000000000000000000\" -l 50000000",
+    "test": "truffle test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:AlexeyKhmelev/lottery-sol.git"
+  },
+  "author": "Alexey Khmelev <avhmel@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-plugin-import": "^2.17.3",
+    "eslint-plugin-jsx-a11y": "^6.2.1",
+    "eslint-plugin-react": "^7.13.0",
+    "ganache-cli": "^6.4.3",
+    "solium": "^1.2.4",
+    "truffle": "^5.0.20"
+  }
+}
