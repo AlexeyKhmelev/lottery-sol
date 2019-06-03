@@ -5,24 +5,20 @@ const truffleAssert = require('truffle-assertions');
 
 const Lottery = artifacts.require('Lottery');
 
-contract('Lottery', ([owner, buyer]) => {
-  const generateBlocks = async (blocksNumber) => {
-    for (let i = 0; i < blocksNumber; i += 1) {
-      // eslint-disable-next-line
-      await web3.eth.sendTransaction({ to: owner, from: buyer, value: 1 });
-    }
-  }
-
+contract('Lottery', ([owner, buyer, nonParticipant]) => {
   const ticketsTotal = 50;
   const ticketPrice = 100;
 
-  const waitBlockCount = 50;
+  const ownerNumber = 100;
+  const buyerNumber = 200;
+
+  const hashNumber = (address, number) => web3.utils.soliditySha3({ t: 'address', v: address }, { t: 'int256', v: number });
 
   describe('Getters', () => {
     let lotteryContract;
 
     before('Create Lottery Contract', async () => {
-      lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, { from: owner, value: ticketPrice });
+      lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice });
     });
 
     it('Get Tickets Total', async () => {
@@ -45,12 +41,12 @@ contract('Lottery', ([owner, buyer]) => {
     let lotteryContract;
 
     before('Create Lottery Contract', async () => {
-      lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, { from: owner, value: ticketPrice });
+      lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice });
     });
 
     it('Buy Ticket', async () => {
       const availableBefore = await lotteryContract.ticketsAvailable();
-      const receipt = await lotteryContract.buyTicket({ from: buyer, value: ticketPrice });
+      const receipt = await lotteryContract.buyTicket(hashNumber(buyer, buyerNumber), { from: buyer, value: ticketPrice });
       const actualBuyer = receipt.logs[0].args.buyer;
 
       truffleAssert.eventEmitted(receipt, 'TicketPurchased', ev =>  ev.buyer === buyer, 'TicketPurchased should be emitted with correct parameters');
@@ -63,7 +59,7 @@ contract('Lottery', ([owner, buyer]) => {
 
     it('Can not buy if value not enough', async () => {
       await truffleAssert.reverts(
-        lotteryContract.buyTicket({ from: buyer, value: ticketPrice - 1 }),
+        lotteryContract.buyTicket(hashNumber(buyer, buyerNumber), { from: buyer, value: ticketPrice - 1 }),
         truffleAssert.ErrorType.REVERT,
       );
     });
@@ -73,18 +69,19 @@ contract('Lottery', ([owner, buyer]) => {
     let lotteryContract;
 
     before('Create Lottery Contract', async () => {
-      lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, { from: owner, value: ticketPrice });
+      lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice });
 
       for (let i = 0; i < ticketsTotal - 1; i += 1) {
-        await lotteryContract.buyTicket({ from: owner, value: ticketPrice });
+        await lotteryContract.buyTicket(hashNumber(buyer, buyerNumber), { from: buyer, value: ticketPrice });
       }
 
-      await generateBlocks(waitBlockCount);
+      await lotteryContract.revealNumber(ownerNumber, { from: owner });
+      await lotteryContract.revealNumber(buyerNumber, { from: buyer });
     });
 
     it('Get Winner', async () => {
       const winner = await lotteryContract.winner();
-      winner.should.be.equal(owner);
+      winner.should.be.equal(buyer);
     });
 
     it('Claim Reward', async () => {
@@ -106,24 +103,24 @@ contract('Lottery', ([owner, buyer]) => {
 
   describe('Negative tests', () => {
     it('Can not buy ticket if none is available', async () => {
-      const lotteryContract = await Lottery.new(1, ticketPrice, { from: owner, value: ticketPrice });
+      const lotteryContract = await Lottery.new(1, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice });
       await truffleAssert.reverts(
-        lotteryContract.buyTicket({ from: buyer, value: ticketPrice }),
+        lotteryContract.buyTicket(hashNumber(buyer, buyerNumber), { from: buyer, value: ticketPrice }),
         truffleAssert.ErrorType.REVERT,
       );
     });
 
     it('Can not get winner if ticket have not been sold out', async () => {
-      const lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, { from: owner, value: ticketPrice });
+      const lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice });
       await truffleAssert.reverts(
         lotteryContract.winner(),
         truffleAssert.ErrorType.REVERT,
       );
     });
 
-    it('Can not get winner if enough blocks are not mined after sold out', async () => {
-      const lotteryContract = await Lottery.new(2, ticketPrice, { from: owner, value: ticketPrice });
-      await lotteryContract.buyTicket({ from: buyer, value: ticketPrice });
+    it('Can not get winner if not all numbers are revealed', async () => {
+      const lotteryContract = await Lottery.new(2, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice });
+      await lotteryContract.buyTicket(hashNumber(buyer, buyerNumber), { from: buyer, value: ticketPrice });
 
       await truffleAssert.reverts(
         lotteryContract.winner(),
@@ -132,16 +129,16 @@ contract('Lottery', ([owner, buyer]) => {
     });
 
     it('Can not get reward if ticket have not been sold out', async () => {
-      const lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, { from: owner, value: ticketPrice });
+      const lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice });
       await truffleAssert.reverts(
         lotteryContract.claimReward({ from: owner }),
         truffleAssert.ErrorType.REVERT,
       );
     });
 
-    it('Can not get reward if enough blocks are not mined after sold out', async () => {
-      const lotteryContract = await Lottery.new(2, ticketPrice, { from: owner, value: ticketPrice });
-      await lotteryContract.buyTicket({ from: owner, value: ticketPrice });
+    it('Can not get reward if not all numbers are revealed', async () => {
+      const lotteryContract = await Lottery.new(2, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice });
+      await lotteryContract.buyTicket(hashNumber(buyer, buyerNumber), { from: owner, value: ticketPrice });
 
       await truffleAssert.reverts(
         lotteryContract.claimReward({ from: owner }),
@@ -150,28 +147,32 @@ contract('Lottery', ([owner, buyer]) => {
     });
 
     it('Can not get reward if not winner', async () => {
-      const lotteryContract = await Lottery.new(2, ticketPrice, { from: owner, value: ticketPrice });
-      await lotteryContract.buyTicket({ from: owner, value: ticketPrice });
+      const lotteryContract = await Lottery.new(2, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice });
+      await lotteryContract.buyTicket(hashNumber(buyer, buyerNumber), { from: buyer, value: ticketPrice });
 
-      await generateBlocks(waitBlockCount);
+      await lotteryContract.revealNumber(ownerNumber, { from: owner });
+      await lotteryContract.revealNumber(buyerNumber, { from: buyer });
 
       await truffleAssert.reverts(
-        lotteryContract.claimReward({ from: buyer }),
+        lotteryContract.claimReward({ from: nonParticipant }),
         truffleAssert.ErrorType.REVERT,
       );
     });
 
     it('Can not claim reward twice', async () => {
-      const lotteryContract = await Lottery.new(2, ticketPrice, { from: owner, value: ticketPrice });
-      await lotteryContract.buyTicket({ from: owner, value: ticketPrice });
+      const lotteryContract = await Lottery.new(2, ticketPrice, hashNumber(owner, ownerNumber), { from: owner, value: ticketPrice });
+      await lotteryContract.buyTicket(hashNumber(buyer, buyerNumber), { from: buyer, value: ticketPrice });
 
-      await generateBlocks(waitBlockCount);
+      await lotteryContract.revealNumber(ownerNumber, { from: owner });
+      await lotteryContract.revealNumber(buyerNumber, { from: buyer });
 
-      const receipt = await lotteryContract.claimReward({ from: owner });
+      const winner = await lotteryContract.winner();
+
+      const receipt = await lotteryContract.claimReward({ from: winner });
       truffleAssert.eventEmitted(receipt, 'RewardClaimed', ev =>  ev.winner === owner, 'RewardClaimed should be emitted with correct parameters');
 
       await truffleAssert.reverts(
-        lotteryContract.claimReward({ from: owner }),
+        lotteryContract.claimReward({ from: winner }),
         truffleAssert.ErrorType.REVERT,
       );
     });
