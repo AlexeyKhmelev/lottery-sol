@@ -16,9 +16,9 @@ contract Lottery {
 
   bool public isRewardClaimed;
 
-  event TicketPurchased(address player, bytes32 numberHash);
+  event TicketPurchased(address indexed player, bytes32 numberHash);
   event TicketsSoldOut();
-  event NumberRevealed(address player, uint256 number);
+  event NumberRevealed(address indexed player, uint256 number);
   event RewardClaimed(address winner);
 
   constructor(uint256 _ticketsTotal, uint256 _ticketPrice, bytes32 _numberHash) public payable {

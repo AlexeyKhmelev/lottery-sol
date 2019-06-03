@@ -12,6 +12,10 @@ As players make up numbers independently the result is effectively randomized.
 The winner can't be determined till all players reveals their numbers. So if one player doesn't reveal the number the whole lottery is hung.
 To avoid such situation the reveal timeframe may be implemented. If a player doesn't reveal the number during the timeframe the whole lottery is cancelled and players may claim their money back. But players who faield to reveal a number will be punished with some fee.
 
+### Alternatives
+
+Possible alternative is to use a trusted Oracle system, e.g. oraclize.it.
+
 ## Run Tests
 
 ### Prerequisites
