@@ -1,3 +1,6 @@
+const chai = require('chai');
+chai.use(require('chai-bn')(web3.utils.BN)).should();
+
 const Lottery = artifacts.require('Lottery');
 
 contract('Lottery', ([owner]) => {
@@ -13,12 +16,12 @@ contract('Lottery', ([owner]) => {
 
     it('Get Tickets Number', async () => {
       const actual = await lotteryContract.ticketsTotal();
-      assert.isTrue(actual.eq(new web3.utils.BN(ticketsTotal)));
+      actual.should.be.a.bignumber.that.equals(new web3.utils.BN(ticketsTotal));
     });
 
     it('Get Ticket Price', async () => {
       const actual = await lotteryContract.ticketPrice();
-      assert.isTrue(actual.eq(new web3.utils.BN(ticketPrice)));
+      actual.should.be.a.bignumber.that.equals(new web3.utils.BN(ticketPrice));
     });
   });
 });
