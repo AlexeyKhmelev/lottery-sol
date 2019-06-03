@@ -18,6 +18,7 @@
     "beforeEach": false,
     "afterEach": false,
     "artifacts": false,
-    "contract": false
+    "contract": false,
+    "web3": false
   }
 }

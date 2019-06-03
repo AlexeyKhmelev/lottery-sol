@@ -32,11 +32,11 @@ contract('Lottery', ([owner, buyer]) => {
     });
   });
 
-  describe ('Buy Ticket', () => {
+  describe('Buy Ticket', () => {
     let lotteryContract;
 
     before('Create Lottery Contract', async () => {
-      lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, { from: owner, value: ticketPrice  });
+      lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, { from: owner, value: ticketPrice });
     });
 
     it('Buy Ticket', async () => {
@@ -45,7 +45,7 @@ contract('Lottery', ([owner, buyer]) => {
       const actualBuyer = receipt.logs[0].args.buyer;
 
       truffleAssert.eventEmitted(receipt, 'TicketPurchased', (ev) => {
-        return ev.buyer === buyer
+        return ev.buyer === buyer;
       }, 'TicketPurchased should be emitted with correct parameters');
 
       actualBuyer.should.be.equal(buyer);
@@ -54,11 +54,51 @@ contract('Lottery', ([owner, buyer]) => {
       availableAfter.should.be.a.bignumber.that.equals(availableBefore.sub(new web3.utils.BN(1)));
     });
 
-    it ('Can not buy if value not enough', async () => {
+    it('Can not buy if value not enough', async () => {
       await truffleAssert.reverts(
         lotteryContract.buyTicket({ from: buyer, value: ticketPrice - 1 }),
-        truffleAssert.ErrorType.REVERT
+        truffleAssert.ErrorType.REVERT,
       );
     });
+  });
+
+  describe('Claim reward - Positive', () => {
+    let lotteryContract;
+
+    before('Create Lottery Contract', async () => {
+      lotteryContract = await Lottery.new(ticketsTotal, ticketPrice, { from: owner, value: ticketPrice });
+
+      for (let i = 0; i < ticketsTotal - 1; i += 1) {
+        await lotteryContract.buyTicket({ from: owner, value: ticketPrice });
+      }
+
+      // generate 50 blocks
+      for (let i = 0; i < 50; i += 1) {
+        await web3.eth.sendTransaction({ to: owner, from: buyer, value: 1 });
+      }
+    });
+
+    it('Get Winner', async () => {
+      const winner = await lotteryContract.winner();
+      winner.should.be.equal(owner);
+    });
+
+    it('Claim Reward', async () => {
+      const winner = await lotteryContract.winner();
+
+      const balanceBefore = await web3.eth.getBalance(winner);
+
+      const receipt = await lotteryContract.claimReward({ from: winner });
+
+      const gasPrice = new web3.utils.BN(await web3.eth.getGasPrice());
+
+      const balanceAfter = await web3.eth.getBalance(winner);
+
+      const expectedBalance = new web3.utils.BN(balanceBefore).add(new web3.utils.BN(ticketsTotal * ticketPrice)).sub(new web3.utils.BN(receipt.receipt.gasUsed).mul(gasPrice));
+      new web3.utils.BN(balanceAfter).should.be.a.bignumber.that.equals(expectedBalance);
+    });
+  });
+
+  describe('Claim reward - Negative', () => {
   });
 });
