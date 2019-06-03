@@ -9,7 +9,7 @@ contract Lottery {
 
   event TicketPurchased(address buyer);
   event TicketsSoldOut(uint256 winnerRevealBlockNumber);
-  event RewardClaimed(address buyer);
+  event RewardClaimed(address winner);
 
   uint256 winnerRevealBlockNumber;
   bool isRewardClaimed;
@@ -56,5 +56,7 @@ contract Lottery {
 
     winnerAddr.transfer(ticketsTotal * ticketPrice);
     isRewardClaimed = true;
+
+    emit RewardClaimed(msg.sender);
   }
 }
